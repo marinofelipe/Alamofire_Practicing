@@ -81,6 +81,7 @@ class ViewController: UIViewController {
 extension ViewController: UIImagePickerControllerDelegate {
 
   func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String: Any]) {
+    
     guard let image = info[UIImagePickerControllerOriginalImage] as? UIImage else {
       print("Info did not have the required UIImage for the Original Image")
       dismiss(animated: true)
@@ -89,10 +90,47 @@ extension ViewController: UIImagePickerControllerDelegate {
 
     imageView.image = image
 
+    takePictureButton.isHidden = true
+    progressView.progress = 0.0
+    progressView.isHidden = false
+    activityIndicatorView.startAnimating()
+    
+    //declared unowned to not create a strong reference cycle
+    upload(image: image, progressCompletion: { [unowned self] percent in
+      
+      self.progressView.setProgress(percent, animated: true)
+    }) { [unowned self] tags, colors in
+      
+      self.takePictureButton.isHidden = false
+      self.progressView.isHidden = true
+      self.activityIndicatorView.stopAnimating()
+      
+      self.tags = tags
+      self.colors = colors
+      
+      self.performSegue(withIdentifier: "ShowResults", sender: self)
+    }
+    
     dismiss(animated: true)
   }
 }
 
 // MARK: - UINavigationControllerDelegate
 extension ViewController: UINavigationControllerDelegate {
+}
+
+// MARK - Networking calls
+extension ViewController {
+  
+  func upload(image: UIImage,
+              progressCompletion: @escaping (_ percent: Float) -> Void,
+              completion: @escaping (_ tags: [String], _ colors:[PhotoColor]) -> Void) {
+    
+    guard let imageData = UIImageJPEGRepresentation(image, 0.5) else {
+      print("Could not get JPEG representation of UIImage")
+      return
+    }
+    
+    
+  }
 }
